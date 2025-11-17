@@ -1,0 +1,12 @@
+export const scanAttendance = async (req, res) => {};
+export const getAttendanceDetails = async (req, res) => {};
+export const exportAttendance = async (req, res) => {};
+export const getAttendanceSummary = async (req, res) => {};
+export const updateAttendanceRecord = async (req, res) => {};
+export const deleteAttendanceRecord = async (req, res) => {};
+export const getCourseAttendance = async (req, res) => {};
+export const getStudentAttendance = async (req, res) => {};
+export const markAttendanceManually = async (req, res) => {};
+export const getAttendanceByDate = async (req, res) => {};
+export const getLatecomers = async (req, res) => {};
+export const getAbsentees = async (req, res) => {};

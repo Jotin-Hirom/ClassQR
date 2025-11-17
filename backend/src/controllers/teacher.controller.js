@@ -1,0 +1,14 @@
+export const getTeacherDashboard = async (req, res) => {};
+export const createCourse = async (req, res) => {};
+export const generateQR = async (req, res) => {};
+export const acceptAttendance = async (req, res) => {};
+export const getCourses = async (req, res) => {};
+export const getCourseDetails = async (req, res) => {};
+export const updateTeacherInfo = async (req, res) => {};
+export const changePassword = async (req, res) => {};
+export const getTeacherProfile = async (req, res) => {};
+export const uploadProfilePicture = async (req, res) => {};
+export const getAttendanceStatistics = async (req, res) => {};
+export const getAttendanceRecords = async (req, res) => {};
+export const getEnrolledStudents = async (req, res) => {};
+export const removeStudentFromCourse = async (req, res) => {};

@@ -47,3 +47,19 @@ If you only want to remove sensitive data or files from the current repo and pus
 git rm --cached local.env
 git commit -m "Remove local.env from repo"
 git push
+
+
+
+mkdir -p backend/{prisma/migrations,scripts,src/{config,middleware,modules/{auth,user,student,teacher,subject,qr,scan,attendance,verification,ml},utils}} \
+&& touch backend/{prisma/seed.js,prisma/initDatabase.sql} \
+&& touch backend/scripts/{createDatabase.js,resetDatabase.sql,README.md} \
+&& touch backend/src/{app.js,server.js,routes.js} \
+&& touch backend/src/config/{db.js,env.js,mail.js} \
+&& touch backend/src/middleware/{auth.js,errorHandler.js} \
+&& touch backend/src/modules/auth/{auth.routes.js,auth.controller.js,auth.service.js,auth.validation.js} \
+&& touch backend/src/modules/ml/{ml.controller.js,ml.service.js} \
+&& touch backend/src/utils/{jwt.js,bcrypt.js,helpers.js} -ItemType File
+
+
+ERROR: TypeError: Cannot read properties of undefined (reading 'release')
+//Client issue in Database. FIx in Pool.
