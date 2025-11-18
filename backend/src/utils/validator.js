@@ -1,11 +1,3 @@
-export const validateEmail = () => {};
-export const validatePassword = () => {};
-export const validateRoll = () => {};
-export const validateName = () => {};
-export const validateOtp = () => {};
-export const validateQRToken = () => {};
-
-
 /**
  * Validation utilities for signup
  */
@@ -16,7 +8,7 @@ export const isValidName = (name) => {
   const re = /^[A-Za-z ]+$/;
   return re.test(name.trim());
 };
-
+ 
 // roll: first 3 letters then 5 digits (total 8)
 export const isValidRoll = (roll) => {
   if (typeof roll !== "string") return false;
@@ -65,7 +57,5 @@ export const isValidPassword = (pwd) => {
 
 // designation/department: letters, spaces, dots, hyphens allowed
 export const isValidDesignationOrDept = (str) => {
-  if (typeof str !== "string") return false;
-  const re = /^[A-Za-z .-]+$/;
-  return re.test(str.trim());
+  return typeof str === "string" && /^[a-z .-]+$/i.test(str.trim());
 };

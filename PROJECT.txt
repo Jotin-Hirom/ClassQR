@@ -25,15 +25,10 @@ FrontEnd run:
 
 powershell: Remove-Item -Recurse -Force .git
 Explanation:
-
 -Recurse → removes everything inside the .git folder
-
 -Force → deletes hidden items without prompting
-
 .git → the hidden folder that stores Git history
-
 After that, you can reinitialize Git cleanly:
-
 git init
 git add .
 git commit -m "Restart project from scratch"
@@ -43,23 +38,52 @@ git push --force origin main
 
 
 If you only want to remove sensitive data or files from the current repo and push again, do this:
-
 git rm --cached local.env
 git commit -m "Remove local.env from repo"
 git push
 
 
-
-mkdir -p backend/{prisma/migrations,scripts,src/{config,middleware,modules/{auth,user,student,teacher,subject,qr,scan,attendance,verification,ml},utils}} \
-&& touch backend/{prisma/seed.js,prisma/initDatabase.sql} \
-&& touch backend/scripts/{createDatabase.js,resetDatabase.sql,README.md} \
-&& touch backend/src/{app.js,server.js,routes.js} \
-&& touch backend/src/config/{db.js,env.js,mail.js} \
-&& touch backend/src/middleware/{auth.js,errorHandler.js} \
-&& touch backend/src/modules/auth/{auth.routes.js,auth.controller.js,auth.service.js,auth.validation.js} \
-&& touch backend/src/modules/ml/{ml.controller.js,ml.service.js} \
-&& touch backend/src/utils/{jwt.js,bcrypt.js,helpers.js} -ItemType File
-
-
 ERROR: TypeError: Cannot read properties of undefined (reading 'release')
 //Client issue in Database. FIx in Pool.
+
+
+//Creating JWT_SECRET
+node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
+jwt.sign(payload, process.env.JWT_SECRET)
+
+
+JWT_SECRET
+Used to sign access tokens (the token you send in Authorization: Bearer xyz).
+Characteristics:
+Short-lived (15m, 10m, 30m)
+Sent with every request to backend
+Validates normal requests (dashboard, API calls, profile access)
+If leaked, attacker can impersonate user only until token expires
+
+REFRESH_SECRET
+Used to sign refresh tokens, which allow users to stay logged-in without typing password again.
+Characteristics:
+Long-lived (7d, 30d, 90d)
+Stored in HttpOnly cookies
+NEVER exposed to JavaScript
+Used only to issue new access tokens
+If leaked, attacker can generate infinite access tokens until it expires
+
+
+
+| Folder           | Why it exists                           |
+| ---------------- | --------------------------------------- |
+| **controllers/** | Handles requests, calls services        |
+| **models/**      | Data representation & DB structure      |
+| **middlewares/** | Authentication, validation, permissions |
+| **routes/**      | Defines API endpoints                   |
+| **services/**    | Main business logic                     |
+| **utils/**       | Helper functions (reusable)             |
+
+
+
+JOIN:
+INNER JOIN (only matching rows)
+LEFT JOIN (all users, students if exist)
+RIGHT JOIN (all students, users if exist)
+FULL JOIN (all rows from both tables)
