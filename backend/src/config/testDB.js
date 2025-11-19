@@ -1,3 +1,6 @@
+import { pool }  from "./pool.js";
+import { initDB } from "./initdb.js";
+
 export const testConnection = async (pool) => {
   let client;
 
@@ -12,3 +15,7 @@ export const testConnection = async (pool) => {
     if (client) client.release();
   }
 };
+
+initDB();
+ // Run test code
+testConnection(pool);

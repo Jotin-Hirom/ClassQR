@@ -1,5 +1,5 @@
 # ==========================
-# 🌿 Core Node.js Ignored Files
+#  Core Node.js Ignored Files
 # ==========================
 
 # Dependency folders
@@ -25,7 +25,7 @@ jest-cache/
 jest-html-reporters-*
 
 # ==========================
-# ⚙️ Build and Output
+#  Build and Output
 # ==========================
 dist/
 build/
@@ -33,7 +33,7 @@ tmp/
 temp/
 
 # ==========================
-# 🔐 Environment & Secrets
+#  Environment & Secrets
 # ==========================
 .env
 .env.*       # .env.development, .env.production, etc.
@@ -43,7 +43,7 @@ local.env
 
 
 # ==========================
-# 🧠 Cache and System Files
+#  Cache and System Files
 # ==========================
 .cache/
 .vscode/
@@ -58,10 +58,9 @@ Thumbs.db
 *.sqlite3
 *.db
 *.pgdata
-*.sql
 
 # ==========================
-# 🧩 Authentication & Security Modules
+#   Authentication & Security Modules
 # (No need to ignore jwt, cookies, or uuid libs — they’re in package.json)
 # ==========================
 
@@ -72,7 +71,7 @@ private.key
 public.key
 
 # ==========================
-# 🚀 Misc
+#  Misc
 # ==========================
 *.swp
 *.swo

@@ -3,6 +3,10 @@ export const forgotPassword = async (req, res) => {};
 export const verifyOtp = async (req, res) => {};
 export const resetPassword = async (req, res) => {};
 
+// Authentication controller for login, refresh, logout
+import { loginUser, saveRefreshToken, revokeRefreshTokenByHash, findRefreshToken , revokeAllUserRefreshTokens} from "../services/auth.service.js";
+import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
+import pool from "../config/pool.js";
 
 
 // Registration controller
@@ -35,77 +39,20 @@ export const registerUser = async (req, res, next) => {
   }
 };
 
-
-// Authentication controller for login, refresh, logout
-import { getUserByEmail, saveRefreshToken, revokeRefreshTokenByToken, findRefreshToken , revokeAllUserRefreshTokens} from "../services/auth.service.js";
-import { compareSync } from "bcryptjs";
-import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
-import pool from "../config/db.js";
-
-const isProduction = process.env.NODE_ENV === "production";
-
-const cookieOptions = {
-  httpOnly: true,
-  secure: isProduction,
-  sameSite: "Strict",
-  // path limits cookie to refresh route if you like:
-  // path: "/api/auth/refresh",
-  maxAge: undefined, // we set based on REFRESH_EXPIRE when creating cookie below
-};
-
-export const loginUser = async (req, res, next) => {
+// Login controller
+export const login = async (req, res) => {
   try {
     const { email, password } = req.body;
+    // Basic validation for user to login
     if (!email || !password) return res.status(400).json({ error: "Email and password required" });
+    // Authenticate user (from service)
+    const {cookiesName, accessToken, tokenReceived, user, cookieOptions } = await loginUser({ email, password });
 
-    const user = await getUserByEmail(email.toLowerCase());
-    if (!user) return res.status(401).json({ error: "Invalid credentials" });
-    if (!user.password_hash) return res.status(401).json({ error: "Complete registration via provider" });
-
-    const valid = compareSync(password, user.password_hash);
-    if (!valid) return res.status(401).json({ error: "Invalid credentials" });
-
-    // generate tokens
-    const accessToken = signAccessToken({ sub: user.user_id, role: user.role, email: user.email });
-    const refreshToken = signRefreshToken({ sub: user.user_id });
-
-
-    // compute expires_at for DB and cookie maxAge (ms)
-    const refreshExpire = process.env.REFRESH_EXPIRE || "1d";
-    // Convert REFRESH_EXPIRE to ms for cookie maxAge:
-    const msMap = { 
-      s: 1000,         // 1 second = 1000 milliseconds
-      m: 60 * 1000,    // 1 minute = 60 seconds × 1000 = 60,000 ms
-      h: 3600 * 1000,  // 1 hour = 3600 seconds × 1000 = 3,600,000 ms  
-      d: 24 * 3600 * 1000 // 1 day = 24 hours × 3600 seconds × 1000 = 86,400,000 ms
-    };
-    // naive parse like "7d", "30m"
-    const match = refreshExpire.match(/^(\d+)([smhd])$/);
-    let cookieMaxAge = null;
-    if (match) {
-      const n = Number(match[1]);
-      const unit = match[2];
-      cookieMaxAge = n * (msMap[unit] || msMap.d);
-      cookieOptions.maxAge = cookieMaxAge;
-    }
-
-    // Save refresh token in DB
-    const expiresAt = new Date(Date.now() + (cookieOptions.maxAge || 1 * 24 * 3600 * 1000));
-    await saveRefreshToken({
-      user_id: user.user_id,
-      token_hash: refreshToken,
-      expires_at: expiresAt,
-    });
-    // await saveRefreshToken({ user_id: user.user_id, token: refreshToken, expires_at: expiresAt });
-
-    // Set cookie
-    // res.cookie("refreshToken", refreshToken, cookieOptions);
-
-    return res.json({ 
-      // accessToken, expiresIn: process.env.JWT_EXPIRE || "15m", 
-      user: { user_id: user.user_id, email: user.email, role: user.role } });
+    // set httpOnly cookie with raw refresh token
+    res.cookie(cookiesName, tokenReceived, cookieOptions);
+    res.json({ success: true, accessToken, user });
   } catch (err) {
-    next(err);
+    res.status(401).json({ success: false, message: err.message });
   }
 };
 
@@ -136,7 +83,7 @@ export const refreshToken = async (req, res, next) => {
     if (!tokenMatch) return res.status(401).json({ error: "Refresh token mismatch" });
 
     // ROTATE TOKEN: revoke old one
-    await revokeRefreshTokenByToken(stored.token_id);
+    await revokeRefreshTokenByHash(stored.token_id);
      // 3. ROTATE TOKEN → revoke old + issue new refresh token
     const newRefreshToken = signRefreshToken({ sub: payload.sub });
 
@@ -150,7 +97,7 @@ export const refreshToken = async (req, res, next) => {
     const expiresAt = new Date(Date.now() + cookieMaxAge);
 
     // Revoke old token
-    await revokeRefreshTokenByToken(token);
+    await revokeRefreshTokenByHash(token);
 
     // Save new token
     await saveRefreshToken({
@@ -179,29 +126,82 @@ export const refreshToken = async (req, res, next) => {
 // Logout controller
 export const logoutUser = async (req, res, next) => {
   try {
-    const refreshToken = req.cookies?.refreshToken;
+    const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+    console.log("Logout called. Refresh token:", refreshToken);
 
     if (refreshToken) {
       let payload;
       try {
         payload = verifyRefreshToken(refreshToken);
-        await revokeAllUserRefreshTokens(payload.sub);
+        // Revoke all refresh tokens for this user
+        // await revokeAllUserRefreshTokens(payload.sub);
       } catch (e) {
         // ignore invalid token — just clear cookie
       }
     }
+    console.log(COOKIE_NAME);
 
-    res.clearCookie("refreshToken", {
+    res.clearCookie(COOKIE_NAME, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
     });
 
-    return res.json({ message: "Logged out" });
+    return res.json({ success: true, message: "Logged out" });
   } catch (err) {
     next(err);
   }
 };
+
+
+/**
+ * POST /api/auth/logoutAll
+ * - If Authorization Bearer token present (verifyToken middleware), uses req.user.user_id
+ * - Otherwise, attempts to read refresh cookie, verify it, and use the sub to revoke
+ */
+export const logoutAllDevices = async (req, res, next) => {
+  try {
+    let userId = null;
+
+    // 1) Prefer the authenticated user info (verifyToken middleware)
+    if (req.user && req.user.user_id) {
+      userId = req.user.user_id;
+    } else {
+      // 2) Fallback to refresh cookie if no access token present
+      const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
+      if (!refreshToken) {
+        return res.status(401).json({ error: "No credentials provided to identify user." });
+      }
+      try {
+        const payload = verifyRefreshToken(refreshToken);
+        userId = payload.sub;
+      } catch (err) {
+        return res.status(401).json({ error: "Invalid refresh token" });
+      }
+    }
+
+    // Revoke all refresh tokens for the user
+    await revokeAllUserRefreshTokens(userId);
+
+    // Clear cookie on client
+    res.clearCookie(COOKIE_NAME, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "Strict",
+    });
+    return res.json({ success: true, message: "Logged out from all devices" });
+  } catch (err) {
+    next(err);
+  }
+};
+
+
+
+
+
+
+
+
 
 
 

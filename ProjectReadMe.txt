@@ -1,0 +1,255 @@
+Backend run:
+ - cd backend
+ - npm src/server.js 
+  or
+ - npx nodemon src/server.js
+  or
+  - npm run dev
+
+FrontEnd run:
+ - Go to run
+ - Select start debugging
+
+
+//Import difference
+Curly braces {} → Named export
+No curly braces → Default export
+
+
+powershell: Remove-Item -Recurse -Force .git
+Explanation:
+-Recurse → removes everything inside the .git folder
+-Force → deletes hidden items without prompting
+.git → the hidden folder that stores Git history
+After that, you can reinitialize Git cleanly:
+git init
+git add .
+git commit -m "Restart project from scratch"
+git remote add origin https://github.com/<your-username>/<repo-name>.git
+git branch -M main
+git push --force origin main
+
+
+If you only want to remove sensitive data or files from the current repo and push again, do this:
+git rm --cached local.env
+git commit -m "Remove local.env from repo"
+git push
+
+
+ERROR: TypeError: Cannot read properties of undefined (reading 'release')
+//Client issue in Database. FIx in Pool.
+
+
+//Creating JWT_SECRET
+node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
+jwt.sign(payload, process.env.JWT_SECRET)
+
+
+JWT_SECRET
+Used to sign access tokens (the token you send in Authorization: Bearer xyz).
+Characteristics:
+Short-lived (15m, 10m, 30m)
+Sent with every request to backend
+Validates normal requests (dashboard, API calls, profile access)
+If leaked, attacker can impersonate user only until token expires
+
+REFRESH_SECRET
+Used to sign refresh tokens, which allow users to stay logged-in without typing password again.
+Characteristics:
+Long-lived (7d, 30d, 90d)
+Stored in HttpOnly cookies
+NEVER exposed to JavaScript
+Used only to issue new access tokens
+If leaked, attacker can generate infinite access tokens until it expires
+
+
+# JOIN:
+INNER JOIN (only matching rows)
+LEFT JOIN (all users, students if exist)
+RIGHT JOIN (all students, users if exist)
+FULL JOIN (all rows from both tables)
+
+
+| Token       | Purpose        | Lifetime  |
+| ----------- | -------------- | --------- |
+| **Access**  | API access     | 10–15 min |
+| **Refresh** | get new access | 7–30 days |
+
+Example Flow:
+1. User logs in → gets
+   * accessToken (short life)
+   * refreshToken (long life)
+2. User uses accessToken normally.
+3. After 15 min, accessToken expires.
+4. Frontend calls:
+   `POST /auth/refresh`
+5. Backend verifies refreshToken.
+6. Backend creates:
+   * new accessToken
+   * new refreshToken (rotation)
+7. Frontend updates tokens silently.
+
+Note: User does NOT login again.
+
+#When should you NOT use refresh tokens?
+
+Refresh tokens **should NOT be sent to other endpoints.**
+They should not be used to:
+
+* authenticate user
+* validate login
+* access APIs
+* store user info
+
+# 6. Where do you store refresh tokens?
+ In **HTTP-only secure cookies**
+* Browser can't read it
+* JS can't steal it
+* Protected from XSS
+* Sent automatically to `/auth/refresh` only
+
+Do NOT store in localStorage/sessionStorage
+Do NOT expose to JavaScript
+Do NOT send refresh token in headers
+
+### When user hits `/auth/refresh`:
+1. Backend receives refresh token from cookie.
+2. Hash it.
+3. Check in DB:
+   * valid?
+   * not expired?
+   * not revoked?
+4. If valid:
+   * revoke old refresh token
+   * generate new refresh + access token
+   * store new refresh hash
+5. Send back:
+   * accessToken (JSON)
+   * refreshToken via new cookie
+
+This is **token rotation** (strongest security).
+
+
+### When attacker steals a refresh token:
+* rotation will catch theft
+* system revokes all tokens
+* forces full re-login
+
+
+| Thing                 | Meaning                                             |
+| --------------------- | --------------------------------------------------- |
+| Access Token          | short life (10–15 min), used for APIs               |
+| Refresh Token         | long life (7–30 days), only for creating new access |
+| Where stored?         | HTTP-only cookies                                   |
+| When used?            | only when access token expires                      |
+| Why rotate?           | prevent stolen token replay                         |
+| Why store hash in DB? | can't steal refresh tokens even if DB leaks         |
+
+
+# Folder Structure:
+| Folder           | Why it exists                           |
+| ---------------- | --------------------------------------- |
+| controllers/     | Handles requests, calls services        |
+| models/          | Data representation & DB structure      |
+| middlewares/     | Authentication, validation, permissions |
+| routes/          | Defines API endpoints                   |
+| services/        | Main business logic                     |
+| utils/           | Helper functions (reusable)             |
+| config/          | Testing database                        |
+| schema/          | Database Schema                         |
+
+
+/src
+ ├── config
+ │    ├── initdb.js
+ │    └── pool.js
+ │    └── testdb.js
+ │
+ ├── schema
+ │    └── schemaPostgre.sql
+ │
+ ├── models
+ │    ├── user.model.js
+ │    ├── student.model.js
+ │    ├── teacher.model.js
+ │    ├── subject.model.js
+ │    ├── courseOffering.model.js
+ │    ├── studentEnrollment.model.js
+ │    ├── qrSession.model.js
+ │    ├── scanEvent.model.js
+ │    ├── attendance.model.js
+ │    ├── verificationLog.model.js
+ │    ├── report.model.js
+ │    ├── refreshToken.model.js
+ │
+ ├── services
+ │    ├── auth.service.js
+ │    ├── user.service.js
+ │    ├── student.service.js
+ │    ├── teacher.service.js
+ │    ├── subject.service.js
+ │    ├── course.service.js
+ │    ├── qr.service.js
+ │    ├── attendance.service.js
+ │    ├── report.service.js
+ │    ├── otp.service.js
+ │
+ ├── controllers
+ │    ├── auth.controller.js
+ │    ├── user.controller.js
+ │    ├── student.controller.js
+ │    ├── teacher.controller.js
+ │    ├── subject.controller.js
+ │    ├── course.controller.js
+ │    ├── qr.controller.js
+ │    ├── attendance.controller.js
+ │    ├── report.controller.js
+ │
+ ├── routes
+ │    ├── auth.routes.js
+ │    ├── user.routes.js
+ │    ├── student.routes.js
+ │    ├── teacher.routes.js
+ │    ├── subject.routes.js
+ │    ├── course.routes.js
+ │    ├── qr.routes.js
+ │    ├── attendance.routes.js
+ │    ├── report.routes.js
+ │
+ ├── middlewares
+ │    ├── auth.middleware.js
+ │    ├── role.middleware.js
+ │    ├── error.middleware.js
+ │
+ ├── utils
+ │    ├── jwt.js
+ │    ├── password.js
+ │    ├── responses.js
+ │    ├── deviceFingerprint.js
+ │    ├── subjects.js
+ │    ├── mailer.js
+ │    ├── otp.js
+ │    ├── validator.js
+ |
+ |
+ ├── app.js
+ ├── server.js
+ └── package.json
+
+
+# Use this command for creating folders with files at same time :
+mkdir config, schema, models, services, controllers, routes, middlewares, utils
+ni config/initdb.js, config/pool.js, config/testdb.js
+ni schema/schemaPostgre.sql
+ni models/user.model.js, models/student.model.js, models/teacher.model.js, models/subject.model.js, models/courseOffering.model.js, models/studentEnrollment.model.js, models/qrSession.model.js, models/scanEvent.model.js, models/attendance.model.js, models/verificationLog.model.js, models/report.model.js, models/refreshToken.model.js
+ni services/auth.service.js, services/user.service.js, services/student.service.js, services/teacher.service.js, services/subject.service.js, services/course.service.js, services/qr.service.js, services/attendance.service.js, services/report.service.js, services/otp.service.js
+ni controllers/auth.controller.js, controllers/user.controller.js, controllers/student.controller.js, controllers/teacher.controller.js, controllers/subject.controller.js, controllers/course.controller.js, controllers/qr.controller.js, controllers/attendance.controller.js, controllers/report.controller.js
+ni routes/auth.routes.js, routes/user.routes.js, routes/student.routes.js, routes/teacher.routes.js, routes/subject.routes.js, routes/course.routes.js, routes/qr.routes.js, routes/attendance.routes.js, routes/report.routes.js
+ni middlewares/auth.middleware.js, middlewares/role.middleware.js, middlewares/error.middleware.js
+ni utils/jwt.js, utils/password.js, utils/responses.js, utils/deviceFingerprint.js, utils/subjects.js, utils/mailer.js, utils/otp.js, utils/validator.js
+ni app.js
+
+Explanation:
+mkdir (or New-Item -ItemType Directory) creates multiple folders separated by commas.
+ni (short for New-Item) creates files.
+-ItemType File ensures they are empty files.

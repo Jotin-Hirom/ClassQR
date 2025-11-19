@@ -24,8 +24,8 @@ CREATE TABLE IF NOT EXISTS teachers (
     abbr TEXT UNIQUE NOT NULL,
     tname TEXT NOT NULL,
     designation TEXT,
-    specialization TEXT,
-    dept TEXT, 
+    specialization TEXT, 
+    dept TEXT,
     programme TEXT,
     photo_url TEXT
 );
@@ -33,7 +33,7 @@ CREATE TABLE IF NOT EXISTS teachers (
 -- SUBJECTS
 CREATE TABLE IF NOT EXISTS subjects (
     sub_code TEXT PRIMARY KEY,
-    sub_name TEXT NOT NULL,
+    sub_name TEXT NOT NULL
 );
 
 -- COURSE OFFERINGS
@@ -119,56 +119,9 @@ CREATE TABLE IF NOT EXISTS reports (
 CREATE TABLE IF NOT EXISTS refresh_tokens (
   token_id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
   user_id UUID REFERENCES users(user_id) ON DELETE CASCADE,
-  token_hash TEXT NOT NULL,
+  token_hash TEXT ,
   expires_at TIMESTAMP NOT NULL,
   revoked BOOLEAN DEFAULT FALSE,
   created_at TIMESTAMP DEFAULT NOW()
 );
 
-// Modify refresh_tokens table to store hashed tokens
-ALTER TABLE refresh_tokens
-    ADD COLUMN token_hash TEXT,
-    DROP COLUMN token;
-
-// Example commands to clear tables
-TRUNCATE TABLE table_name1, table_name2, table_name3 RESTART IDENTITY CASCADE;
-DELETE FROM table_name WHERE condition;
-
-// Clear all data from all tables (use with caution)
-TRUNCATE TABLE 
-  refresh_tokens,
-  reports,
-  verification_logs,
-  attendance,
-  scan_events,
-  qr_sessions,
-  student_enrollments,
-  course_offerings,
-  subjects,
-  teachers,
-  students,
-  users
-RESTART IDENTITY CASCADE;
-//TRUNCATE with CASCADE ensures it works even if the order is not perfect.
-//Still, ordering from most dependent → least dependent is a good practice.
-
-ALTER TABLE students
-  ALTER COLUMN programme DROP NOT NULL,
-  ALTER COLUMN batch DROP NOT NULL,
-  DROP CONSTRAINT students_semester_check,
-  ADD CONSTRAINT students_semester_check CHECK (semester BETWEEN 1 AND 10);
-
-ALTER TABLE teachers
-  ALTER COLUMN designation DROP NOT NULL,
-  ALTER COLUMN dept DROP NOT NULL;
-
-ALTER TABLE subjects
-  DROP COLUMN IF EXISTS sub_credit;
-
-ALTER TABLE students
-  ALTER COLUMN sname DROP NOT NULL;
-
-SELECT u.email, t.abbr, t.tname, t.dept
-FROM users u
-JOIN teachers t ON u.user_id = t.user_id
-WHERE u.role = 'teacher';

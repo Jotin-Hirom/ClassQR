@@ -2,7 +2,6 @@ import pkg from "pg";
 const { Pool }  = pkg;
 import dotenv from "dotenv";
 dotenv.config();
-import {testConnection}  from "./testDB.js";
 const { PG_USER, PG_PASSWORD, PG_HOST, PG_PORT, PG_DATABASE } = process.env;
 
 const pool = new Pool({
@@ -12,8 +11,5 @@ const pool = new Pool({
     password: PG_PASSWORD,
     port: Number(PG_PORT),
   });
-
- // Run test code
-testConnection(pool);
 
 export default pool; 

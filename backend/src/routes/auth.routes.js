@@ -1,5 +1,6 @@
 import express from "express";
-import { registerUser,loginUser, refreshToken, logoutUser } from "../controllers/auth.controller.js";
+import { registerUser, login, refreshToken, logoutUser, logoutAllDevices } from "../controllers/auth.controller.js";
+import { verifyToken } from "../middlewares/auth.middleware.js"; 
 const router = express.Router();
 
 /**
@@ -11,12 +12,15 @@ const router = express.Router();
 router.post("/signup", registerUser);
 
 // Login -> returns access token + sets refresh cookie
-router.post("/login", loginUser); 
+router.post("/login", login); 
 
 // Refresh endpoint -> reads refresh cookie and returns new access token
 router.post("/refresh", refreshToken);
 
 // Logout -> revoke refresh token & clear cookie
 router.post("/logout", logoutUser);
+
+// Logout from ALL devices (new). Uses verifyToken when available.
+router.post("/logoutAll", verifyToken, logoutAllDevices);
 
 export default router;
