@@ -1,4 +1,5 @@
 export const errorHandler = (err, req, res, next) => {
+  console.log("Error middleware triggered");
   console.error("ERROR:", err);
   // Check if headers are already sent
   if(res.headersSent) {
@@ -10,4 +11,7 @@ export const errorHandler = (err, req, res, next) => {
     success: false,
     message: err.message || "Internal Server Error",
   });
+
+  // Call next middleware (if any)
+  next();
 };

@@ -15,135 +15,13 @@ FrontEnd run:
 Curly braces {} → Named export
 No curly braces → Default export
 
+//Difference
+.env holds project-level settings,
+local.env holds your personal settings.
 
-powershell: Remove-Item -Recurse -Force .git
-Explanation:
--Recurse → removes everything inside the .git folder
--Force → deletes hidden items without prompting
-.git → the hidden folder that stores Git history
-After that, you can reinitialize Git cleanly:
-git init
-git add .
-git commit -m "Restart project from scratch"
-git remote add origin https://github.com/<your-username>/<repo-name>.git
-git branch -M main
-git push --force origin main
-
-
-If you only want to remove sensitive data or files from the current repo and push again, do this:
-git rm --cached local.env
-git commit -m "Remove local.env from repo"
-git push
-
-
-ERROR: TypeError: Cannot read properties of undefined (reading 'release')
-//Client issue in Database. FIx in Pool.
-
-
-//Creating JWT_SECRET
-node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
-jwt.sign(payload, process.env.JWT_SECRET)
-
-
-JWT_SECRET
-Used to sign access tokens (the token you send in Authorization: Bearer xyz).
-Characteristics:
-Short-lived (15m, 10m, 30m)
-Sent with every request to backend
-Validates normal requests (dashboard, API calls, profile access)
-If leaked, attacker can impersonate user only until token expires
-
-REFRESH_SECRET
-Used to sign refresh tokens, which allow users to stay logged-in without typing password again.
-Characteristics:
-Long-lived (7d, 30d, 90d)
-Stored in HttpOnly cookies
-NEVER exposed to JavaScript
-Used only to issue new access tokens
-If leaked, attacker can generate infinite access tokens until it expires
-
-
-# JOIN:
-INNER JOIN (only matching rows)
-LEFT JOIN (all users, students if exist)
-RIGHT JOIN (all students, users if exist)
-FULL JOIN (all rows from both tables)
-
-
-| Token       | Purpose        | Lifetime  |
-| ----------- | -------------- | --------- |
-| **Access**  | API access     | 10–15 min |
-| **Refresh** | get new access | 7–30 days |
-
-Example Flow:
-1. User logs in → gets
-   * accessToken (short life)
-   * refreshToken (long life)
-2. User uses accessToken normally.
-3. After 15 min, accessToken expires.
-4. Frontend calls:
-   `POST /auth/refresh`
-5. Backend verifies refreshToken.
-6. Backend creates:
-   * new accessToken
-   * new refreshToken (rotation)
-7. Frontend updates tokens silently.
-
-Note: User does NOT login again.
-
-#When should you NOT use refresh tokens?
-
-Refresh tokens **should NOT be sent to other endpoints.**
-They should not be used to:
-
-* authenticate user
-* validate login
-* access APIs
-* store user info
-
-# 6. Where do you store refresh tokens?
- In **HTTP-only secure cookies**
-* Browser can't read it
-* JS can't steal it
-* Protected from XSS
-* Sent automatically to `/auth/refresh` only
-
-Do NOT store in localStorage/sessionStorage
-Do NOT expose to JavaScript
-Do NOT send refresh token in headers
-
-### When user hits `/auth/refresh`:
-1. Backend receives refresh token from cookie.
-2. Hash it.
-3. Check in DB:
-   * valid?
-   * not expired?
-   * not revoked?
-4. If valid:
-   * revoke old refresh token
-   * generate new refresh + access token
-   * store new refresh hash
-5. Send back:
-   * accessToken (JSON)
-   * refreshToken via new cookie
-
-This is **token rotation** (strongest security).
-
-
-### When attacker steals a refresh token:
-* rotation will catch theft
-* system revokes all tokens
-* forces full re-login
-
-
-| Thing                 | Meaning                                             |
-| --------------------- | --------------------------------------------------- |
-| Access Token          | short life (10–15 min), used for APIs               |
-| Refresh Token         | long life (7–30 days), only for creating new access |
-| Where stored?         | HTTP-only cookies                                   |
-| When used?            | only when access token expires                      |
-| Why rotate?           | prevent stolen token replay                         |
-| Why store hash in DB? | can't steal refresh tokens even if DB leaks         |
+.env → development
+.env.production → deployment
+.env.test → testing
 
 
 # Folder Structure:
@@ -253,3 +131,136 @@ Explanation:
 mkdir (or New-Item -ItemType Directory) creates multiple folders separated by commas.
 ni (short for New-Item) creates files.
 -ItemType File ensures they are empty files.
+
+
+powershell: Remove-Item -Recurse -Force .git
+Explanation:
+-Recurse → removes everything inside the .git folder
+-Force → deletes hidden items without prompting
+.git → the hidden folder that stores Git history
+After that, you can reinitialize Git cleanly:
+git init
+git add .
+git commit -m "Restart project from scratch"
+git remote add origin https://github.com/<your-username>/<repo-name>.git
+git branch -M main
+git push --force origin main /git push
+
+
+If you only want to remove sensitive data or files from the current repo and push again, do this:
+git rm --cached local.env
+git commit -m "Remove local.env from repo"
+git push
+
+
+TypeError: Cannot read properties of undefined (reading 'release')
+//Client issue in Database. Fix in Pool.
+
+
+//Creating JWT_SECRET
+node -e "console.log(require('crypto').randomBytes(64).toString('base64'))"
+jwt.sign(payload, process.env.JWT_SECRET)
+
+
+JWT_SECRET
+Used to sign access tokens (the token you send in Authorization: Bearer xyz).
+Characteristics:
+Short-lived (15m, 10m, 30m)
+Sent with every request to backend
+Validates normal requests (dashboard, API calls, profile access)
+If leaked, attacker can impersonate user only until token expires
+
+REFRESH_SECRET
+Used to sign refresh tokens, which allow users to stay logged-in without typing password again.
+Characteristics:
+Long-lived (7d, 30d, 90d)
+Stored in HttpOnly cookies
+NEVER exposed to JavaScript
+Used only to issue new access tokens
+If leaked, attacker can generate infinite access tokens until it expires
+
+
+# JOIN:
+INNER JOIN (only matching rows)
+LEFT JOIN (all users, students if exist)
+RIGHT JOIN (all students, users if exist)
+FULL JOIN (all rows from both tables)
+
+
+| Token       | Purpose        | Lifetime  |
+| ----------- | -------------- | --------- |
+| **Access**  | API access     | 10–15 min |
+| **Refresh** | get new access | 7–30 days |
+Example Flow:
+1. User logs in → gets
+   * accessToken (short life)
+   * refreshToken (long life)
+2. User uses accessToken normally.
+3. After 15 min, accessToken expires.
+4. Frontend calls:
+   `POST /auth/refresh`
+5. Backend verifies refreshToken.
+6. Backend creates:
+   * new accessToken
+   * new refreshToken (rotation)
+7. Frontend updates tokens silently.
+
+Note: User does NOT login again.
+
+#When should you NOT use refresh tokens?
+
+Refresh tokens **should NOT be sent to other endpoints.**
+They should not be used to:
+
+* authenticate user
+* validate login
+* access APIs
+* store user info
+
+# 6. Where do you store refresh tokens?
+ In **HTTP-only secure cookies**
+* Browser can't read it
+* JS can't steal it
+* Protected from XSS
+* Sent automatically to `/auth/refresh` only
+
+Do NOT store in localStorage/sessionStorage
+Do NOT expose to JavaScript
+Do NOT send refresh token in headers
+
+### When user hits `/auth/refresh`:
+1. Backend receives refresh token from cookie.
+2. Hash it.
+3. Check in DB:
+   * valid?
+   * not expired?
+   * not revoked?
+4. If valid:
+   * revoke old refresh token
+   * generate new refresh + access token
+   * store new refresh hash
+5. Send back:
+   * accessToken (JSON)
+   * refreshToken via new cookie
+
+This is **token rotation** (strongest security).
+
+
+### When attacker steals a refresh token:
+* rotation will catch theft
+* system revokes all tokens
+* forces full re-login
+
+
+| Thing                 | Meaning                                             |
+| --------------------- | --------------------------------------------------- |
+| Access Token          | short life (10–15 min), used for APIs               |
+| Refresh Token         | long life (7–30 days), only for creating new access |
+| Where stored?         | HTTP-only cookies                                   |
+| When used?            | only when access token expires                      |
+| Why rotate?           | prevent stolen token replay                         |
+| Why store hash in DB? | can't steal refresh tokens even if DB leaks         |
+
+
+Error:Invalid character in header content ["Host"]
+This always happens when your URL contains spaces, line breaks, or illegal characters.

@@ -1,3 +1,4 @@
+// This cron job runs daily at 3 AM and removes revoked refresh tokens older than 5 days.
 import cron from "node-cron";
 import { cleanupOldRefreshTokens } from "../services/auth.service.js";
 
@@ -6,4 +7,3 @@ cron.schedule("0 3 * * *", async () => {
   await cleanupOldRefreshTokens();
   console.log("Done.");
 });
-// This cron job runs daily at 3 AM and removes revoked refresh tokens older than 5 days.

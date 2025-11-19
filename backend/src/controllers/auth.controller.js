@@ -7,6 +7,7 @@ export const resetPassword = async (req, res) => {};
 import { loginUser, saveRefreshToken, revokeRefreshTokenByHash, findRefreshToken , revokeAllUserRefreshTokens} from "../services/auth.service.js";
 import { signAccessToken, signRefreshToken, verifyRefreshToken } from "../utils/jwt.js";
 import pool from "../config/pool.js";
+import bcrypt from "bcryptjs";
 
 
 // Registration controller
@@ -47,7 +48,6 @@ export const login = async (req, res) => {
     if (!email || !password) return res.status(400).json({ error: "Email and password required" });
     // Authenticate user (from service)
     const {cookiesName, accessToken, tokenReceived, user, cookieOptions } = await loginUser({ email, password });
-
     // set httpOnly cookie with raw refresh token
     res.cookie(cookiesName, tokenReceived, cookieOptions);
     res.json({ success: true, accessToken, user });
@@ -125,9 +125,9 @@ export const refreshToken = async (req, res, next) => {
 
 // Logout controller
 export const logoutUser = async (req, res, next) => {
+  console.log(req.cookies);
   try {
     const refreshToken = req.cookies?.refreshToken || req.body?.refreshToken;
-    console.log("Logout called. Refresh token:", refreshToken);
 
     if (refreshToken) {
       let payload;
@@ -139,9 +139,9 @@ export const logoutUser = async (req, res, next) => {
         // ignore invalid token — just clear cookie
       }
     }
-    console.log(COOKIE_NAME);
+    console.log(cookiesName);
 
-    res.clearCookie(COOKIE_NAME, {
+    res.clearCookie(cookiesName, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",
@@ -184,7 +184,7 @@ export const logoutAllDevices = async (req, res, next) => {
     await revokeAllUserRefreshTokens(userId);
 
     // Clear cookie on client
-    res.clearCookie(COOKIE_NAME, {
+    res.clearCookie(cookiesName, {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
       sameSite: "Strict",

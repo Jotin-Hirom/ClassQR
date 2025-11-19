@@ -1,4 +1,4 @@
-import { pool }  from "./pool.js";
+import pool from "./pool.js";
 import { initDB } from "./initdb.js";
 
 export const testConnection = async (pool) => {
@@ -16,6 +16,8 @@ export const testConnection = async (pool) => {
   }
 };
 
-initDB();
- // Run test code
+// Run test code to verify connection
 testConnection(pool);
+
+// Run the initialization script to create tables
+initDB();

@@ -1,10 +1,11 @@
+//DO NOT RUN THIS FILE DIRECTLY UNLESS YOU WANT TO SEED THE DATABASE WITH TEST DATA.
+//This file is to be used for seeding the database with test data for development and testing purposes only.
+//Iniatialize "db:seed": "node {folderName}/seed.js" in package.json scripts 
+// and run "npm run db:seed" command to execute this file.
+
 import pool from "../src/config/db.js";
-import { fileURLToPath } from "url";
-import path from "path";
 
 console.log(" Starting seed script...");
-
-const pause = (ms) => new Promise((res) => setTimeout(res, ms));
 
 async function seed() {
   try {
@@ -14,7 +15,7 @@ async function seed() {
     } catch (error) {
         console.error("Error connecting to the database:", error);
     }
-    console.log("🔹 Clearing old seed if exists...");
+    console.log("🔹 Clearing all old rows from each table if exists...");
     await pool.query(`
       DELETE FROM reports;
       DELETE FROM verification_logs;
